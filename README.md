@@ -1,246 +1,246 @@
 # Git Worktree Manager
 
-Um gerenciador de worktrees Git que facilita a criação e gerenciamento de múltiplas árvores de trabalho para o mesmo repositório.
+A Git worktree manager that simplifies the creation and management of multiple working trees for the same repository.
 
-## O que é?
+## What is it?
 
-O Git Worktree Manager é um script bash que simplifica o trabalho com worktrees do Git. Ele permite criar, listar e remover worktrees de forma intuitiva, além de automatizar tarefas comuns como:
+Git Worktree Manager is a bash script that simplifies working with Git worktrees. It allows you to create, list, and remove worktrees intuitively, while automating common tasks such as:
 
-- Criação de branches e worktrees
-- Cópia de arquivos de configuração (`.env`, `.cursor`, etc.)
-- Cópia de `node_modules` para acelerar o desenvolvimento
-- Abertura automática no Cursor IDE
-- Navegação inteligente para manter o contexto do diretório atual
+- Creating branches and worktrees
+- Copying configuration files (`.env`, `.cursor`, etc.)
+- Copying `node_modules` to speed up development
+- Automatic opening in Cursor IDE
+- Smart navigation to maintain current directory context
 
-## Como instalar
+## How to install
 
-### Usando o script install.sh
+### Using the install.sh script
 
 ```bash
 chmod +x install.sh
 ./install.sh
 ```
 
-O script install.sh irá:
+The install.sh script will:
 
-1. Baixar o script do repositório
-2. Instalar em `~/.local/bin/worktree`
-3. Tornar o script executável
-4. Verificar se o diretório está no PATH
+1. Download the script from the repository
+2. Install it to `~/.local/bin/worktree`
+3. Make the script executable
+4. Check if the directory is in PATH
 
-Se `~/.local/bin` não estiver no seu PATH, adicione esta linha ao seu `~/.bashrc` ou `~/.zshrc`:
+If `~/.local/bin` is not in your PATH, add this line to your `~/.bashrc` or `~/.zshrc`:
 
 ```bash
 export PATH="$PATH:~/.local/bin"
 ```
 
-### Instalação manual
+### Manual installation
 
 ```bash
-# Copiar o script para um diretório no PATH
+# Copy the script to a directory in PATH
 cp worktree.sh ~/.local/bin/worktree
 chmod +x ~/.local/bin/worktree
 ```
 
-## Funcionalidades
+## Features
 
-### 1. Criar um novo worktree
+### 1. Create a new worktree
 
-Cria um novo worktree para uma feature branch.
+Creates a new worktree for a feature branch.
 
 ```bash
 worktree add my-new-feature
 ```
 
-**O que faz:**
+**What it does:**
 
-- Cria uma nova branch `my-new-feature` (se não existir)
-- Cria um worktree em `../projeto-worktrees/my-new-feature`
-- Copia arquivos de configuração (`.env`, `.cursor`, etc.)
-- Copia `node_modules` do diretório atual
-- Abre no Cursor IDE na mesma localização relativa
+- Creates a new branch `my-new-feature` (if it doesn't exist)
+- Creates a worktree at `../project-worktrees/my-new-feature`
+- Copies configuration files (`.env`, `.cursor`, etc.)
+- Copies `node_modules` from the current directory
+- Opens in Cursor IDE at the same relative location
 
-### 2. Criar worktree sem copiar node_modules
+### 2. Create worktree without copying node_modules
 
-Para projetos grandes onde você prefere rodar `pnpm install` no novo worktree:
+For large projects where you prefer to run `pnpm install` in the new worktree:
 
 ```bash
 worktree add my-feature --skip-node-modules
 ```
 
-### 3. Listar todos os worktrees
+### 3. List all worktrees
 
-Mostra todos os worktrees existentes, destacando o atual com ★:
+Shows all existing worktrees, highlighting the current one with ★:
 
 ```bash
 worktree list
 ```
 
-**Exemplo de saída:**
+**Example output:**
 
 ```
-=== Git Worktrees for meu-projeto ===
+=== Git Worktrees for my-project ===
 
 ★ [current] [main repository] → main
-   Path: /Users/usuario/projeto
+   Path: /Users/user/project
 
 Worktrees:
 ★ [current] ▸ feature-login
-     /Users/usuario/projeto-worktrees/feature-login
+     /Users/user/project-worktrees/feature-login
   ▸ feature-dashboard → dashboard-improvements
-     /Users/usuario/projeto-worktrees/feature-dashboard
+     /Users/user/project-worktrees/feature-dashboard
 ```
 
-### 4. Remover um worktree específico
+### 4. Remove a specific worktree
 
-Remove um worktree e limpa as referências:
+Removes a worktree and cleans up references:
 
 ```bash
 worktree remove my-feature
 ```
 
-**O que faz:**
+**What it does:**
 
-- Remove o worktree do sistema de arquivos
-- Limpa as referências Git
-- Força a remoção mesmo com mudanças não commitadas
+- Removes the worktree from the filesystem
+- Cleans up Git references
+- Forces removal even with uncommitted changes
 
-### 5. Remover todos os worktrees
+### 5. Remove all worktrees
 
-Remove todos os worktrees com confirmação:
+Removes all worktrees with confirmation:
 
 ```bash
 worktree remove-all
 ```
 
-**O que faz:**
+**What it does:**
 
-- Lista todos os worktrees que serão removidos
-- Pede confirmação (y/N)
-- Remove todos os worktrees sequencialmente
+- Lists all worktrees that will be removed
+- Asks for confirmation (y/N)
+- Removes all worktrees sequentially
 
-### 6. Ajuda
+### 6. Help
 
-Mostra todas as opções disponíveis:
+Shows all available options:
 
 ```bash
 worktree --help
-# ou
+# or
 worktree -h
-# ou simplesmente
+# or simply
 worktree
 ```
 
-## Estrutura de arquivos
+## File structure
 
-O script organiza os worktrees da seguinte forma:
+The script organizes worktrees as follows:
 
 ```
-meu-projeto/                    # Repositório principal
+my-project/                    # Main repository
 │
 ├── src/
 ├── package.json
 ├── .env
 └── ...
 
-meu-projeto-worktrees/         # Diretório de worktrees
+my-project-worktrees/         # Worktrees directory
 │
-├── feature-login/             # Worktree para feature-login
+├── feature-login/             # Worktree for feature-login
 │   ├── src/
 │   ├── package.json
-│   ├── .env                   # Copiado do principal
-│   └── node_modules/          # Copiado do principal
+│   ├── .env                   # Copied from main
+│   └── node_modules/          # Copied from main
 │
-└── feature-dashboard/         # Worktree para feature-dashboard
+└── feature-dashboard/         # Worktree for feature-dashboard
     ├── src/
     ├── package.json
-    ├── .env                   # Copiado do principal
-    └── node_modules/          # Copiado do principal
+    ├── .env                   # Copied from main
+    └── node_modules/          # Copied from main
 ```
 
-## Arquivos copiados automaticamente
+## Automatically copied files
 
-O script copia automaticamente os seguintes arquivos e diretórios:
+The script automatically copies the following files and directories:
 
-**Arquivos:**
+**Files:**
 
 - `.env`
 
-**Diretórios:**
+**Directories:**
 
 - `.instrumental`
 - `.agent_os`
 - `.claude`
 - `.cursor`
-- `node_modules` (pode ser pulado com `--skip-node-modules`)
+- `node_modules` (can be skipped with `--skip-node-modules`)
 
-## Requisitos
+## Requirements
 
 - Git
 - Bash
-- Cursor IDE (opcional, mas recomendado)
-- Sistema operacional: macOS, Linux ou Windows com WSL
+- Cursor IDE (optional, but recommended)
+- Operating system: macOS, Linux, or Windows with WSL
 
-## Características especiais
+## Special features
 
 ### Copy-on-Write (COW)
 
-No macOS com APFS, o script usa copy-on-write para copiar `node_modules` de forma mais eficiente, economizando espaço e tempo.
+On macOS with APFS, the script uses copy-on-write to copy `node_modules` more efficiently, saving space and time.
 
-### Navegação inteligente
+### Smart navigation
 
-O script lembra onde você estava quando criou o worktree e abre o Cursor na mesma localização relativa no novo worktree.
+The script remembers where you were when you created the worktree and opens Cursor at the same relative location in the new worktree.
 
-### Detecção de branch existente
+### Existing branch detection
 
-Se você criar um worktree para uma branch que já existe, o script usa a branch existente em vez de criar uma nova.
+If you create a worktree for a branch that already exists, the script uses the existing branch instead of creating a new one.
 
-## Exemplos de uso
+## Usage examples
 
-### Desenvolvimento de feature
+### Feature development
 
 ```bash
-# No diretório do projeto
-cd ~/projetos/meu-app/src/components
+# In the project directory
+cd ~/projects/my-app/src/components
 
-# Criar worktree para nova feature
+# Create worktree for new feature
 worktree add user-authentication
 
-# O Cursor abre automaticamente em:
-# ~/projetos/meu-app-worktrees/user-authentication/src/components
+# Cursor automatically opens at:
+# ~/projects/my-app-worktrees/user-authentication/src/components
 ```
 
-### Gerenciamento de múltiplas features
+### Managing multiple features
 
 ```bash
-# Criar várias features
+# Create multiple features
 worktree add feature-login
 worktree add feature-dashboard
 worktree add bugfix-header
 
-# Listar todas
+# List all
 worktree list
 
-# Trabalhar em uma feature específica
-cd ~/projetos/meu-app-worktrees/feature-login
+# Work on a specific feature
+cd ~/projects/my-app-worktrees/feature-login
 
-# Remover feature concluída
+# Remove completed feature
 worktree remove feature-login
 ```
 
-### Limpeza de worktrees
+### Worktree cleanup
 
 ```bash
-# Remover todos os worktrees antigos
+# Remove all old worktrees
 worktree remove-all
 
-# Confirmar com 'y' quando perguntado
+# Confirm with 'y' when prompted
 ```
 
-## Dicas de uso
+## Usage tips
 
-1. **Use nomes descritivos** para seus worktrees: `feature-user-auth`, `bugfix-mobile-menu`
-2. **Mantenha o repositório principal limpo** usando worktrees para desenvolvimento
-3. **Use `--skip-node-modules`** para projetos grandes e instale dependências conforme necessário
-4. **O comando `list` mostra onde você está** - útil quando trabalhando com múltiplos worktrees
-5. **Commit suas mudanças** antes de remover worktrees para evitar perda de trabalho
+1. **Use descriptive names** for your worktrees: `feature-user-auth`, `bugfix-mobile-menu`
+2. **Keep the main repository clean** by using worktrees for development
+3. **Use `--skip-node-modules`** for large projects and install dependencies as needed
+4. **The `list` command shows where you are** - useful when working with multiple worktrees
+5. **Commit your changes** before removing worktrees to avoid losing work
