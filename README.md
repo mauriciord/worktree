@@ -9,7 +9,7 @@ Git Worktree Manager is a bash script that simplifies working with Git worktrees
 - Creating branches and worktrees
 - Copying configuration files (`.env`, `.cursor`, etc.)
 - Copying `node_modules` to speed up development
-- Automatic opening in Cursor IDE
+- Automatic opening in VS Code (or Cursor with `--cursor` flag)
 - Smart navigation to maintain current directory context
 
 ## How to install
@@ -58,9 +58,17 @@ worktree add my-new-feature
 - Creates a worktree at `../project-worktrees/my-new-feature`
 - Copies configuration files (`.env`, `.cursor`, etc.)
 - Copies `node_modules` from the current directory
-- Opens in Cursor IDE at the same relative location
+- Opens in VS Code at the same relative location
 
-### 2. Create worktree without copying node_modules
+### 2. Create worktree with Cursor
+
+To open in Cursor instead of VS Code:
+
+```bash
+worktree add my-feature --cursor
+```
+
+### 3. Create worktree without copying node_modules
 
 For large projects where you prefer to run `pnpm install` in the new worktree:
 
@@ -68,7 +76,7 @@ For large projects where you prefer to run `pnpm install` in the new worktree:
 worktree add my-feature --skip-node-modules
 ```
 
-### 3. List all worktrees
+### 4. List all worktrees
 
 Shows all existing worktrees, highlighting the current one with ★:
 
@@ -91,7 +99,7 @@ Worktrees:
      /Users/user/project-worktrees/feature-dashboard
 ```
 
-### 4. Remove a specific worktree
+### 5. Remove a specific worktree
 
 Removes a worktree and cleans up references:
 
@@ -105,7 +113,7 @@ worktree remove my-feature
 - Cleans up Git references
 - Forces removal even with uncommitted changes
 
-### 5. Remove all worktrees
+### 6. Remove all worktrees
 
 Removes all worktrees with confirmation:
 
@@ -119,7 +127,7 @@ worktree remove-all
 - Asks for confirmation (y/N)
 - Removes all worktrees sequentially
 
-### 6. Help
+### 7. Help
 
 Shows all available options:
 
@@ -178,7 +186,7 @@ The script automatically copies the following files and directories:
 
 - Git
 - Bash
-- Cursor IDE (optional, but recommended)
+- VS Code (optional, but recommended) or Cursor (use with `--cursor` flag)
 - Operating system: macOS, Linux, or Windows with WSL
 
 ## Special features
@@ -189,7 +197,7 @@ On macOS with APFS, the script uses copy-on-write to copy `node_modules` more ef
 
 ### Smart navigation
 
-The script remembers where you were when you created the worktree and opens Cursor at the same relative location in the new worktree.
+The script remembers where you were when you created the worktree and opens VS Code (or Cursor with `--cursor`) at the same relative location in the new worktree.
 
 ### Existing branch detection
 
@@ -203,11 +211,14 @@ If you create a worktree for a branch that already exists, the script uses the e
 # In the project directory
 cd ~/projects/my-app/src/components
 
-# Create worktree for new feature
+# Create worktree for new feature (opens in VS Code)
 worktree add user-authentication
 
-# Cursor automatically opens at:
+# VS Code automatically opens at:
 # ~/projects/my-app-worktrees/user-authentication/src/components
+
+# Or create worktree and open in Cursor instead
+worktree add user-authentication --cursor
 ```
 
 ### Managing multiple features

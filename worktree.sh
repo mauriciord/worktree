@@ -34,6 +34,7 @@ PROJECT_NAME=$(basename "$PROJECT_DIR")
 WORKTREE_PARENT="${PROJECT_DIR}-worktrees"
 CURRENT_DIR=$(pwd)
 RELATIVE_PATH=""
+USE_CURSOR=false
 
 # Calculate relative path if we're inside the project
 if [[ "$CURRENT_DIR" == "$PROJECT_DIR"* ]]; then
@@ -48,7 +49,7 @@ fi
 show_help() {
     echo -e "${BLUE}${BOLD}=== Git Worktree Manager ===${RESET}"
     echo
-    echo -e "${CYAN}Usage:${RESET} ${YELLOW}worktree <command>${RESET}"
+    echo -e "${CYAN}Usage:${RESET} ${YELLOW}worktree <command> [options]${RESET}"
     echo
     echo -e "${CYAN}Commands:${RESET}"
     echo -e "  ${GREEN}add <name>${RESET}          Create a new worktree for the given feature branch"
@@ -56,15 +57,20 @@ show_help() {
     echo -e "  ${GREEN}remove <name>${RESET}       Remove a specific worktree"
     echo -e "  ${GREEN}remove-all${RESET}          Remove all worktrees (with confirmation)"
     echo
+    echo -e "${CYAN}Options:${RESET}"
+    echo -e "  ${YELLOW}--cursor${RESET}            Use Cursor instead of VS Code"
+    echo -e "  ${YELLOW}--skip-node-modules${RESET} Don't copy node_modules when creating worktree"
+    echo
     echo -e "${CYAN}When creating a worktree:${RESET}"
     echo -e "  • If the branch doesn't exist, it creates a new branch"
     echo -e "  • If the branch already exists, it checks out the existing branch"
     echo -e "  • Automatically copies .env and other configuration files"
     echo -e "  • Copies node_modules from your current directory to the same location"
-    echo -e "  • Opens in Cursor at the same relative path where you ran the command"
+    echo -e "  • Opens in VS Code at the same relative path where you ran the command (use --cursor for Cursor)"
     echo
     echo -e "${CYAN}Examples:${RESET}"
-    echo -e "  ${YELLOW}worktree add my-new-feature${RESET}                # Create new worktree"
+    echo -e "  ${YELLOW}worktree add my-new-feature${RESET}                # Create new worktree (opens in VS Code)"
+    echo -e "  ${YELLOW}worktree add my-feature --cursor${RESET}           # Create new worktree (opens in Cursor)"
     echo -e "  ${YELLOW}worktree add my-feature --skip-node-modules${RESET} # Create without copying node_modules"
     echo -e "  ${YELLOW}worktree list${RESET}                              # List all worktrees (shows current with ★)"
     echo -e "  ${YELLOW}worktree remove my-feature${RESET}                 # Remove specific worktree"
@@ -227,13 +233,23 @@ create_worktree() {
     local feature_name=$1
     local skip_node_modules=false
 
-    # Check for --skip-node-modules flag
+    # Parse arguments
+    shift # Remove the feature name from arguments
     for arg in "$@"; do
-        if [[ "$arg" == "--skip-node-modules" ]]; then
-            skip_node_modules=true
-        elif [[ "$arg" != "$1" ]]; then
-            feature_name=$arg
-        fi
+        case "$arg" in
+            --skip-node-modules)
+                skip_node_modules=true
+                ;;
+            --cursor)
+                USE_CURSOR=true
+                ;;
+            *)
+                # If it's not a flag, it might be the feature name if we haven't set it
+                if [[ -z "$feature_name" ]]; then
+                    feature_name=$arg
+                fi
+                ;;
+        esac
     done
 
     local worktree_path="${WORKTREE_PARENT}/${feature_name}"
@@ -272,8 +288,12 @@ create_worktree() {
     # Copy configuration files
     copy_config_files "$worktree_path" "$skip_node_modules"
 
-    # Open in Cursor
-    open_in_cursor "$worktree_path"
+    # Open in editor (VS Code or Cursor)
+    if [[ "$USE_CURSOR" == true ]]; then
+        open_in_cursor "$worktree_path"
+    else
+        open_in_vscode "$worktree_path"
+    fi
 
     echo
     echo -e "${GREEN}${CHECK} Worktree '${feature_name}' created at:${RESET}"
@@ -349,6 +369,34 @@ copy_config_files() {
     fi
 }
 
+# Open in VS Code
+open_in_vscode() {
+    local worktree_path=$1
+
+    local path_to_open
+    if [[ -n "$RELATIVE_PATH" ]]; then
+        path_to_open="${worktree_path}/${RELATIVE_PATH}"
+    else
+        path_to_open="$worktree_path"
+    fi
+
+    echo -n "Opening in VS Code..."
+
+    # Try to open in VS Code with error handling
+    if command -v code &> /dev/null && code "$path_to_open" 2>/dev/null; then
+        echo -e "\r${GREEN}${CHECK} Opened in VS Code at ${RELATIVE_PATH:-root}${RESET}              "
+    # Fallback for macOS: try using open command with VS Code
+    elif [[ "$OSTYPE" == "darwin"* ]] && command -v open &> /dev/null; then
+        if open -a "Visual Studio Code" "$path_to_open" 2>/dev/null; then
+            echo -e "\r${GREEN}${CHECK} Opened in VS Code at ${RELATIVE_PATH:-root}${RESET}              "
+        else
+            echo -e "\r${YELLOW}${WARNING} Failed to open in VS Code. Please open ${path_to_open} manually.${RESET}"
+        fi
+    else
+        echo -e "\r${YELLOW}${WARNING} VS Code not found or failed to open. Please open ${path_to_open} manually.${RESET}"
+    fi
+}
+
 # Open in Cursor
 open_in_cursor() {
     local worktree_path=$1
@@ -361,7 +409,7 @@ open_in_cursor() {
     fi
 
     echo -n "Opening in Cursor..."
-    
+
     # Try to open in cursor with error handling
     if command -v cursor &> /dev/null && cursor "$path_to_open" 2>/dev/null; then
         echo -e "\r${GREEN}${CHECK} Opened in Cursor at ${RELATIVE_PATH:-root}${RESET}              "
@@ -379,27 +427,66 @@ open_in_cursor() {
 
 # Main script
 main() {
-    local command=$1
+    local command=""
+    local args=()
 
-    if [[ -z "$command" ]] || [[ "$command" == "--help" ]] || [[ "$command" == "-h" ]]; then
+    # Parse global flags and command
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --cursor)
+                USE_CURSOR=true
+                shift
+                ;;
+            --help|-h)
+                show_help
+                exit 0
+                ;;
+            add|list|remove|remove-all)
+                command="$1"
+                shift
+                # Collect remaining arguments
+                while [[ $# -gt 0 ]]; do
+                    args+=("$1")
+                    shift
+                done
+                break
+                ;;
+            *)
+                if [[ -z "$command" ]]; then
+                    command="$1"
+                    shift
+                else
+                    args+=("$1")
+                    shift
+                fi
+                ;;
+        esac
+    done
+
+    if [[ -z "$command" ]]; then
         show_help
         exit 0
     fi
 
     case "$command" in
         add)
-            if [[ -z "$2" ]]; then
+            if [[ ${#args[@]} -eq 0 ]]; then
                 echo -e "${RED}${CROSS} Error: Please specify a name for the worktree${RESET}"
-                echo -e "   ${YELLOW}Usage: worktree add <name>${RESET}"
+                echo -e "   ${YELLOW}Usage: worktree add <name> [options]${RESET}"
                 exit 1
             fi
-            create_worktree "${@:2}"
+            create_worktree "${args[@]}"
             ;;
         list)
             list_worktrees
             ;;
         remove)
-            remove_worktree "$2"
+            if [[ ${#args[@]} -eq 0 ]]; then
+                echo -e "${RED}${CROSS} Error: Please specify which worktree to remove${RESET}"
+                echo -e "   ${YELLOW}Usage: worktree remove <name>${RESET}"
+                exit 1
+            fi
+            remove_worktree "${args[0]}"
             ;;
         remove-all)
             remove_all_worktrees
